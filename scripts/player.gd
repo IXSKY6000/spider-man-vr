@@ -5,12 +5,16 @@ const WALK_SPEED := 3.0
 const RUN_SPEED := 6.0
 const JUMP_SPEED := 5.0
 const SNAP_ANGLE := deg_to_rad(30.0)
+const WebSwing = preload("res://scripts/web_swing.gd")
 var xr_active := false
 var xr_render_scale := 1.15
 var origin: XROrigin3D
 var camera: Camera3D
 var left_hand: XRController3D
 var right_hand: XRController3D
+var left_aim: XRController3D
+var right_aim: XRController3D
+var webs: Node3D
 var capsule: CollisionShape3D
 var spawn_point := Vector3(0, 2, 8)
 var water_height := -2.0
@@ -44,6 +48,8 @@ func _ready() -> void:
 		origin.add_child(camera)
 		left_hand = _hand("left_hand", origin)
 		right_hand = _hand("right_hand", origin)
+		left_aim = _aim("left_hand")
+		right_aim = _aim("right_hand")
 		var hint := Label3D.new()
 		hint.text = "WEB / LIBERTY\nG : marcher  ·  D : tourner\nA : sauter  ·  B : retour"
 		hint.font_size = 30
@@ -60,7 +66,17 @@ func _ready() -> void:
 	camera.current = true
 	camera.near = 0.07
 	camera.far = 2200.0
+	webs = WebSwing.new()
+	webs.player = self
+	add_child(webs)
 	respawn()
+
+func _aim(tracker_name: String) -> XRController3D:
+	var pointer := XRController3D.new()
+	pointer.tracker = tracker_name
+	pointer.pose = "aim"
+	origin.add_child(pointer)
+	return pointer
 
 func _hand(tracker_name: String, parent: Node3D) -> XRController3D:
 	var controller := XRController3D.new()
@@ -85,7 +101,8 @@ func _register_inputs() -> void:
 	var keys := {
 		"move_left": [KEY_A, KEY_Q, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"move_forward": [KEY_W, KEY_Z, KEY_UP], "move_back": [KEY_S, KEY_DOWN],
-		"jump": [KEY_SPACE], "run": [KEY_SHIFT], "respawn": [KEY_R]
+		"jump": [KEY_SPACE], "run": [KEY_SHIFT], "respawn": [KEY_R],
+		"web_reel": [KEY_E]
 	}
 	for action in keys:
 		if InputMap.has_action(action):
@@ -95,6 +112,12 @@ func _register_inputs() -> void:
 			var event := InputEventKey.new()
 			event.physical_keycode = code
 			InputMap.action_add_event(action, event)
+	for entry in [["web_left", MOUSE_BUTTON_LEFT], ["web_right", MOUSE_BUTTON_RIGHT]]:
+		if not InputMap.has_action(entry[0]):
+			InputMap.add_action(entry[0])
+			var event := InputEventMouseButton.new()
+			event.button_index = entry[1]
+			InputMap.action_add_event(entry[0], event)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if xr_active:
@@ -103,6 +126,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		webs.cancel_all()
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * 0.002)
 		camera.rotation.x = clampf(camera.rotation.x - event.relative.y * 0.002, -1.4, 1.4)
@@ -143,13 +167,26 @@ func _physics_process(delta: float) -> void:
 	var right := forward.cross(Vector3.UP)
 	var direction := (right * movement.x - forward * movement.y).limit_length(1)
 	var speed := RUN_SPEED if wants_run else WALK_SPEED
-	velocity.x = direction.x * speed
-	velocity.z = direction.z * speed
-	if not is_on_floor():
+	webs.update_controls(delta)
+	var attached: bool = webs.is_attached()
+	floor_snap_length = 0.0 if attached else 0.3
+	if is_on_floor() and not attached:
+		velocity.x = direction.x * speed
+		velocity.z = direction.z * speed
+	else:
+		# Keep the pendulum/release momentum; the stick adds gentle air steering.
+		var acceleration := 8.0 if attached else 2.5
+		velocity.x += direction.x * acceleration * delta
+		velocity.z += direction.z * acceleration * delta
+		var drag := exp(-0.06 * delta)
+		velocity.x *= drag
+		velocity.z *= drag
+	if not is_on_floor() or attached:
 		velocity.y -= 12.0 * delta
 	if wants_jump and not jump_held and is_on_floor():
 		velocity.y = JUMP_SPEED
 	jump_held = wants_jump
+	webs.apply_constraints(delta)
 	move_and_slide()
 	if global_position.y < water_height - 1.0 or Input.is_action_just_pressed("respawn"):
 		respawn()
@@ -162,11 +199,17 @@ func snap_turn(angle: float) -> void:
 	global_position += Vector3(correction.x, 0, correction.z)
 
 func respawn() -> void:
+	if webs:
+		webs.cancel_all()
 	global_position = spawn_point
 	velocity = Vector3.ZERO
 	if xr_active:
 		var head_offset := camera.global_position - global_position
 		global_position -= Vector3(head_offset.x, 0, head_offset.z)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and webs:
+		webs.cancel_all()
 
 func cycle_render_quality() -> void:
 	if xr_render_scale < 1.075:
@@ -183,4 +226,4 @@ func cycle_render_quality() -> void:
 
 func _refresh_quality_label() -> void:
 	if is_instance_valid(quality_label):
-		quality_label.text = "WEB / LIBERTY\nG : marcher · D : tourner\nA : sauter · B : retour\nY : netteté %d %%" % roundi(xr_render_scale * 100)
+		quality_label.text = "WEB / LIBERTY\nGâchettes : toiles · Prises : rapprocher\nSticks : marcher / tourner\nA : saut · B : retour\nY : netteté %d %%" % roundi(xr_render_scale * 100)

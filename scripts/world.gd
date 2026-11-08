@@ -59,6 +59,7 @@ func _lighting() -> void:
 	var sky := Sky.new()
 	var sky_material := ShaderMaterial.new()
 	sky_material.shader = preload("res://shaders/day_sky.gdshader")
+	sky_material.set_shader_parameter("panorama", preload("res://assets/sky/kloofendal_48d_partly_cloudy_puresky_4k.hdr"))
 	sky.sky_material = sky_material
 	environment.background_mode = Environment.BG_SKY
 	environment.sky = sky
@@ -162,6 +163,6 @@ func _desktop_overlay() -> void:
 	layer.add_child(panel)
 	var label := Label.new()
 	var status := "LIBERTY CITY IMPORTÉE" if map_loaded else "ZONE DE TEST · CARTE GTA III NON IMPORTÉE"
-	label.text = "WEB / LIBERTY   —   PROTOTYPE VR\n\n%s\n\nZQSD / WASD : marcher   ·   Maj : courir\nEspace : sauter   ·   R : retour au départ\nClic : caméra souris   ·   Échap : libérer la souris\n\nQuest 3 : stick G / stick D · A : saut · B : retour" % status
+	label.text = "WEB / LIBERTY   —   PROTOTYPE VR\n\n%s\n\nZQSD / WASD : marcher   ·   Maj : courir\nEspace : sauter   ·   R : retour au départ\nClic G / D maintenu : toiles   ·   E : rapprocher\nÉchap : libérer la souris et les toiles\n\nQuest 3 : gâchettes = toiles · prises = rapprocher\nSticks : marcher / tourner · A : saut · B : retour" % status
 	label.add_theme_font_size_override("font_size", 17)
 	panel.add_child(label)

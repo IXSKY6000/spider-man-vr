@@ -7,6 +7,7 @@ blender --background --python tools/prepare_map.py -- \
   --terrain-regex '^TerrainTest$' --overwrite
 tools/godot.sh --headless --xr-mode off --editor --import --quit
 tools/godot.sh --headless --xr-mode off --script tests/smoke.gd
+tools/godot.sh --headless --xr-mode off --script tests/web_smoke.gd
 if [[ -f assets/maps/liberty_city.glb ]]; then
   tools/godot.sh --headless --xr-mode off --script tests/city_smoke.gd
 else

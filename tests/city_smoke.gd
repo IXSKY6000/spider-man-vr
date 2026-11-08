@@ -51,7 +51,9 @@ func _run() -> void:
 	check(not sun.shadow_enabled, "Static city uses baked shadows instead of dynamic shadow maps")
 	var environment_nodes = world.find_children("*", "WorldEnvironment", true, false)
 	var sky_material = environment_nodes[0].environment.sky.sky_material
-	check(sky_material is ShaderMaterial and sky_material.shader == load("res://shaders/day_sky.gdshader"), "Day sky renders its own visible solar disc")
+	check(sky_material is ShaderMaterial and sky_material.shader == load("res://shaders/day_sky.gdshader"), "Photographic skybox retains the aligned daytime sun")
+	var panorama: Texture2D = sky_material.get_shader_parameter("panorama")
+	check(panorama != null and panorama.get_width() == 4096, "Photographic 4K cloud panorama is loaded")
 	var sun_direction := sun.global_basis.z.normalized()
 	var sky_direction: Vector3 = sky_material.get_shader_parameter("sun_direction")
 	var shader_direction: Vector3 = world.city_stream.materials.values()[0].get_shader_parameter("sun_direction")

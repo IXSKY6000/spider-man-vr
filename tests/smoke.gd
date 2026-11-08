@@ -70,8 +70,8 @@ func _run() -> void:
 	check(surface.global_position.distance_to(Vector3(1400, -2, -2300)) < 3.0, "Ocean follows player while keeping configured water altitude")
 	player.position = old_player_position
 	var actions := load("res://config/openxr_action_map.tres") as OpenXRActionMap
-	check(actions.get_action_set(0).get_action_count() == 6, "OpenXR gameplay actions exist")
-	check(actions.get_interaction_profile(0).get_binding_count() == 8, "Touch controller bindings exist")
+	check(actions.get_action_set(0).get_action_count() == 10, "OpenXR locomotion, web and haptic actions exist")
+	check(actions.get_interaction_profile(0).get_binding_count() == 16, "Touch controller bindings include both web shooters")
 	var quality_button := false
 	for binding in actions.get_interaction_profile(0).bindings:
 		if binding.binding_path == "/user/hand/left/input/y/click" and binding.action.resource_name == "quality":

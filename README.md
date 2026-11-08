@@ -1,13 +1,16 @@
-# Webs / Liberty VR — 0.2, rendu net et éclairage précalculé
+# Webs / Liberty VR — 0.3, skybox nuageuse et premières toiles
 
 Prototype Godot **4.6.3**, GDScript, OpenXR et rendu Compatibility / OpenGL ES 3.
 **La vraie carte fournie est maintenant intégrée**, avec les textures d'origine,
 le terrain adouci sur des surfaces sélectionnées, l'océan et les déplacements.
-Les toiles, le balancement, l'escalade et les missions ne sont pas encore implémentés.
+Deux lance-toiles permettent maintenant de s’accrocher aux bâtiments, se balancer
+et se rapprocher d’un ancrage. L’escalade, les ennemis et les missions ne sont
+pas encore implémentés.
 
 [Aperçu des ombres dans la rue](docs/previews/street.png) ·
 [Aperçu du parc](docs/previews/park.png) ·
-[Soleil visible dans le ciel](docs/previews/sky.png)
+[Soleil visible dans le ciel](docs/previews/sky.png) ·
+[Deux toiles dans la ville](docs/previews/webs.png)
 
 La carte provient de **Quake332**, [Grand Theft Auto 3 — Liberty City](https://www.deviantart.com/quake332/art/Grand-Theft-Auto-3-Liberty-City-928693536).
 Le RAR transmis par le lien Drive a pu être téléchargé et extrait. Les sources
@@ -32,10 +35,18 @@ d'origine sont conservées à leur résolution native.
 ## Soleil de journée et ombres fixes
 
 Un soleil est placé à **68° au-dessus de l’horizon**, avec un azimut de −35°.
-Le ciel procédural bleu contient un disque solaire visible et un halo discret.
-Le ciel, la lumière directionnelle qui éclaire l’eau et les ombres de la ville
-partagent exactement la même direction. Le brouillard lointain laisse le soleil
-visible. Changer la direction du soleil nécessite de recalculer les ombres.
+La skybox utilise le panorama photographique HDRI **Kloofendal 48d Partly Cloudy (Pure Sky),
+4K**, de Poly Haven, sous CC0 : vrais nuages et ciel de milieu de journée.
+Le soleil photographié est aligné sur la direction actuelle grâce à un décalage
+horizontal et un remappage vertical doux qui conserve l’horizon et le zénith.
+Il n’y a pas de second soleil superposé. La provenance et la somme de contrôle
+sont dans `assets/sky/SOURCE.md`.
+
+**L’éclairage précalculé de la version 0.2 est conservé.** Les quatre cartes
+solaires, leur manifeste, le shader de la ville et la direction du soleil ne
+changent pas. La nouvelle skybox apparaît aussi dans les reflets de l’eau.
+Le brouillard lointain laisse le soleil visible. Changer la direction du soleil
+nécessiterait de recalculer les ombres.
 
 Les ombres des bâtiments, ponts et arbres sont précalculées dans **quatre images
 solaires de 4096²**, couvrant 1 956 m dans le plan du soleil, soit environ **24 cm
@@ -105,6 +116,8 @@ l'éditeur suffit. Pour PC VR, démarrer le runtime OpenXR puis lancer sans
 | Tourner | Stick droit, crans de 30° | Clic puis souris |
 | Sauter | A | Espace |
 | Retour au départ | B | R |
+| Tirer / maintenir une toile par main | Gâchette index de chaque main | Clic gauche / droit maintenu |
+| Se rapprocher d’un ancrage | Prise sous les doigts de la même main | E, pour les toiles actives |
 | Niveau de netteté | Y, main gauche | `xr_render_scale` dans la configuration |
 | Libérer la souris | — | Échap |
 
@@ -117,6 +130,34 @@ Le déplacement physique à travers un mur n'est pas encore masqué par un fondu
 et la taille de l'océan, le vent, la rugosité, le brouillard et les distances
 visuelles. `stream_city=true` active le shader d'atlas et la physique par zones.
 Si le GLB manque, une petite zone de test explicitement indiquée prend le relais.
+
+## Premier jet des mouvements Spider-Man
+
+Viser un bâtiment avec un contrôleur, puis **maintenir sa gâchette** pour tirer
+une toile. Chaque main possède son ancrage indépendant. Les petites cibles bleues
+signalent une surface à portée. Maintenir la prise de cette même main pour
+**raccourcir la toile et monter**, puis relâcher la gâchette pour continuer sur
+son élan. Le stick permet de corriger la trajectoire pendant le balancement.
+On peut alterner les mains pour traverser la ville.
+
+Les toiles portent jusqu’à **160 m** et doivent toucher une vraie surface
+statique en hauteur ; le ciel et le sol ne créent pas d’ancrage. Un petit élan
+au premier tir aide à quitter le sol ; A permet aussi de sauter. La prise
+raccourcit la toile à 10 m/s, jusqu’à 3 m. La vitesse totale est limitée à 28 m/s.
+Deux toiles simultanées partagent leurs contraintes sans imposer une position
+par téléportation. La capsule et `move_and_slide` assurent les collisions.
+
+Le relâchement conserve la vitesse, et le stick applique une correction modérée
+en l’air. Un obstacle qui coupe la ligne libère la toile ; le système ne déroule
+pas encore une toile autour des coins des bâtiments. Les poses OpenXR `aim`
+servent à viser, les poses `grip` à afficher les mains et le départ des fils.
+Les accroches et tirs manqués produisent un court retour haptique. Une perte
+de suivi, un retour au départ ou Échap libère les toiles.
+
+Sur PC, cliquer dans la vue pour capturer la souris, viser avec la caméra,
+maintenir clic gauche/droit pour les toiles et E pour les raccourcir.
+C’est un premier prototype de balancement : pas encore de course sur les murs,
+de système d’animations de mains ni d’accroche automatique assistée.
 
 ## Eau
 
@@ -220,11 +261,14 @@ le réglage XR et la nouvelle eau sans collision. Deux rayons physiques
 indépendants vérifient aussi les profondeurs précalculées du pont et d’une rue
 éclairée, avec une tolérance de 1 cm.
 Le script Blender de fixture vérifie également le lissage et le maintien des
-bords et coordonnées horizontales. Les tests et leurs fixtures sont exclus de l'APK.
+bords et coordonnées horizontales. Les **20 contrôles des toiles** testent les impacts réels, les deux mains,
+le raccourcissement, l’arc du pendule, l’élan conservé, les collisions,
+la coupure par obstacle et les bindings Touch. Les tests et leurs fixtures
+sont exclus de l’APK.
 
 Le rendu OpenGL a été lancé et inspecté avec des captures de rue et une vue
 d'ensemble. La signature de l'APK est vérifiée après l'export. Ces contrôles
 ne remplacent pas un essai sur casque physique.
 
 Livrables : `build/webs-liberty-quest3.apk`, `build/webs-liberty-godot.zip`,
-`build/sun-street-full.png`, `build/sun-park-full.png` et `build/sun-sky-full.png`.
+`build/webs-city-v03.png` et les captures du ciel dans `docs/previews/`.

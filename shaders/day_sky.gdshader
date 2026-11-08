@@ -1,17 +1,22 @@
 shader_type sky;
 uniform vec3 sun_direction = vec3(-0.214, 0.927, 0.307);
+uniform sampler2D panorama : source_color, filter_linear_mipmap, repeat_enable;
+// Photographic solar centre, measured from the original HDR panorama.
+uniform vec2 panorama_sun_uv = vec2(0.5951673720, 0.2339545356);
 
 void sky() {
 	vec3 direction = normalize(EYEDIR);
-	float elevation = max(direction.y, 0.0);
-	vec3 horizon = vec3(0.48, 0.65, 0.82);
-	vec3 zenith = vec3(0.07, 0.27, 0.60);
-	vec3 atmosphere = mix(horizon, zenith, pow(elevation, 0.45));
-	if (direction.y < 0.0) {
-		atmosphere = mix(vec3(0.10, 0.12, 0.14), horizon, exp(direction.y * 18.0));
-	}
-	float separation = acos(clamp(dot(direction, normalize(sun_direction)), -1.0, 1.0));
-	float disc = 1.0 - smoothstep(0.0042, 0.0049, separation);
-	float halo = exp(-pow(separation / 0.025, 2.0));
-	COLOR = atmosphere + vec3(1.0, 0.94, 0.80) * (disc * 8.0 + halo * 0.18);
+	vec3 sun = normalize(sun_direction);
+	float target_elevation = asin(sun.y);
+	float source_elevation = (0.5 - panorama_sun_uv.y) * PI;
+	float elevation = asin(clamp(direction.y, -1.0, 1.0));
+	// Align the photographed sun with the existing bake, preserving the horizon
+	// and zenith. Smooth derivatives keep its disc round at the alignment point.
+	float weight = elevation < target_elevation
+		? smoothstep(0.0, target_elevation, elevation)
+		: 1.0 - smoothstep(target_elevation, PI * 0.5, elevation);
+	float sampled_elevation = elevation - (target_elevation - source_elevation) * weight;
+	float sun_azimuth = atan(sun.x, sun.z) / TAU + 0.5;
+	vec2 uv = vec2(atan(direction.x, direction.z) / TAU + 0.5 + panorama_sun_uv.x - sun_azimuth, 0.5 - sampled_elevation / PI);
+	COLOR = texture(panorama, uv).rgb;
 }
