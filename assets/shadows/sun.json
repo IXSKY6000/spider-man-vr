@@ -1,0 +1,36 @@
+{
+  "depth_min": -473.796478271484,
+  "depth_span": 707.485656738281,
+  "files": [
+    "res://assets/shadows/sun_0_0.png",
+    "res://assets/shadows/sun_1_0.png",
+    "res://assets/shadows/sun_0_1.png",
+    "res://assets/shadows/sun_1_1.png"
+  ],
+  "grid": 2,
+  "method": "static orthographic RGB24 solar depth, PCF at runtime",
+  "minimum": [
+    -1488.75048828125,
+    -679.220825195312
+  ],
+  "resolution": 4096,
+  "right": [
+    0.819152057170868,
+    0.0,
+    0.5735764503479
+  ],
+  "span": 1956.0,
+  "sun_azimuth": -35.0,
+  "sun_direction": [
+    -0.214865550398827,
+    0.927183866500854,
+    0.306859791278839
+  ],
+  "sun_elevation": 68.0,
+  "up": [
+    0.531810820102692,
+    0.374606639146805,
+    -0.759504556655884
+  ],
+  "geometry_sha256": "2e2fb7d1dbd41235c17945b21a015f1d6fb638a2d01e8260d549c15998615f1c"
+}

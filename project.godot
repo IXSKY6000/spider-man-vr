@@ -6,19 +6,21 @@ config/name="Webs • Liberty VR"
 config/icon="res://icon.svg"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/description="Prototype de déplacement VR. Carte Liberty City à importer séparément."
+config/description="Prototype OpenXR Quest 3 dans Liberty City."
 
 [display]
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+gl_compatibility/precision/enable_high_float=true
 textures/default_filters/use_nearest_mipmap_filter=false
 textures/vram_compression/import_etc2_astc=true
-anti_aliasing/quality/msaa_3d=1
+anti_aliasing/quality/msaa_3d=2
+textures/default_filters/anisotropic_filtering_level=4
 environment/defaults/default_clear_color=Color(0.3, 0.48, 0.62, 1)
 
 [xr]
@@ -26,6 +28,7 @@ openxr/enabled=true
 openxr/default_action_map="res://config/openxr_action_map.tres"
 openxr/environment_blend_mode=0
 openxr/extensions/hand_tracking=false
+openxr/extensions/meta/dynamic_resolution=false
 shaders/enabled=true
 
 [physics]

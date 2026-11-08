@@ -6,6 +6,7 @@ const RUN_SPEED := 6.0
 const JUMP_SPEED := 5.0
 const SNAP_ANGLE := deg_to_rad(30.0)
 var xr_active := false
+var xr_render_scale := 1.15
 var origin: XROrigin3D
 var camera: Camera3D
 var left_hand: XRController3D
@@ -15,6 +16,8 @@ var spawn_point := Vector3(0, 2, 8)
 var water_height := -2.0
 var turn_latched := false
 var jump_held := false
+var quality_held := false
+var quality_label: Label3D
 
 func _ready() -> void:
 	name = "Player"
@@ -28,10 +31,12 @@ func _ready() -> void:
 	capsule.shape = shape
 	capsule.position.y = 0.85
 	add_child(capsule)
-	var xr := XRServer.find_interface("OpenXR")
+	var xr := XRServer.find_interface("OpenXR") as OpenXRInterface
 	xr_active = xr != null and xr.is_initialized()
 	if xr_active:
+		xr.set_render_target_size_multiplier(clampf(xr_render_scale, 1.0, 1.5))
 		get_viewport().use_xr = true
+		print("XR_RENDER_SCALE ", xr.get_render_target_size_multiplier(), " target=", xr.get_render_target_size())
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		origin = XROrigin3D.new()
 		add_child(origin)
@@ -46,6 +51,8 @@ func _ready() -> void:
 		hint.position = Vector3(0, 0.10, 0)
 		hint.rotation_degrees.x = -65
 		left_hand.add_child(hint)
+		quality_label = hint
+		_refresh_quality_label()
 	else:
 		camera = Camera3D.new()
 		camera.position.y = 1.65
@@ -105,6 +112,10 @@ func _physics_process(delta: float) -> void:
 	var wants_jump := Input.is_action_pressed("jump")
 	var wants_run := Input.is_action_pressed("run")
 	if xr_active:
+		var quality_pressed := left_hand.is_button_pressed("quality")
+		if quality_pressed and not quality_held:
+			cycle_render_quality()
+		quality_held = quality_pressed
 		var stick := left_hand.get_vector2("move")
 		movement = Vector2(stick.x, -stick.y)
 		if movement.length() < 0.18:
@@ -156,3 +167,20 @@ func respawn() -> void:
 	if xr_active:
 		var head_offset := camera.global_position - global_position
 		global_position -= Vector3(head_offset.x, 0, head_offset.z)
+
+func cycle_render_quality() -> void:
+	if xr_render_scale < 1.075:
+		xr_render_scale = 1.15
+	elif xr_render_scale < 1.225:
+		xr_render_scale = 1.3
+	else:
+		xr_render_scale = 1.0
+	if xr_active:
+		var xr := XRServer.find_interface("OpenXR") as OpenXRInterface
+		xr.set_render_target_size_multiplier(xr_render_scale)
+		print("XR_RENDER_SCALE ", xr_render_scale, " target=", xr.get_render_target_size())
+	_refresh_quality_label()
+
+func _refresh_quality_label() -> void:
+	if is_instance_valid(quality_label):
+		quality_label.text = "WEB / LIBERTY\nG : marcher · D : tourner\nA : sauter · B : retour\nY : netteté %d %%" % roundi(xr_render_scale * 100)

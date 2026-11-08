@@ -132,7 +132,7 @@
     },
     {
       "name": "City_-5_7",
-      "triangles": 8171
+      "triangles": 8163
     },
     {
       "name": "City_-5_8",
@@ -172,7 +172,7 @@
     },
     {
       "name": "City_-4_7",
-      "triangles": 14645
+      "triangles": 14617
     },
     {
       "name": "City_-4_8",
@@ -216,7 +216,7 @@
     },
     {
       "name": "City_-3_7",
-      "triangles": 12339
+      "triangles": 12327
     },
     {
       "name": "City_-3_8",
@@ -296,7 +296,7 @@
     },
     {
       "name": "City_-1_3",
-      "triangles": 26796
+      "triangles": 26773
     },
     {
       "name": "City_-1_4",
@@ -332,11 +332,11 @@
     },
     {
       "name": "City_0_0",
-      "triangles": 17238
+      "triangles": 17215
     },
     {
       "name": "City_0_1",
-      "triangles": 25388
+      "triangles": 25372
     },
     {
       "name": "City_0_2",
@@ -348,11 +348,11 @@
     },
     {
       "name": "City_0_4",
-      "triangles": 25252
+      "triangles": 25242
     },
     {
       "name": "City_0_5",
-      "triangles": 37139
+      "triangles": 37033
     },
     {
       "name": "City_0_6",
@@ -360,7 +360,7 @@
     },
     {
       "name": "City_1_0",
-      "triangles": 8002
+      "triangles": 7952
     },
     {
       "name": "City_1_1",
@@ -432,11 +432,11 @@
     },
     {
       "name": "City_3_3",
-      "triangles": 27280
+      "triangles": 27272
     },
     {
       "name": "City_3_4",
-      "triangles": 28390
+      "triangles": 28384
     },
     {
       "name": "City_3_5",
@@ -530,5 +530,13 @@
   ],
   "terrain_faces": 52616,
   "terrain_vertices_relaxed": 4080,
-  "chunk_size_m": 128.0
+  "chunk_size_m": 128.0,
+  "atlas_metadata_version": 2,
+  "legacy_water_triangles": 290,
+  "legacy_water_materials": [
+    255,
+    1098,
+    1148,
+    1169
+  ]
 }

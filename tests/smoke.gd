@@ -70,8 +70,18 @@ func _run() -> void:
 	check(surface.global_position.distance_to(Vector3(1400, -2, -2300)) < 3.0, "Ocean follows player while keeping configured water altitude")
 	player.position = old_player_position
 	var actions := load("res://config/openxr_action_map.tres") as OpenXRActionMap
-	check(actions.get_action_set(0).get_action_count() == 5, "OpenXR gameplay actions exist")
-	check(actions.get_interaction_profile(0).get_binding_count() == 7, "Touch controller bindings exist")
+	check(actions.get_action_set(0).get_action_count() == 6, "OpenXR gameplay actions exist")
+	check(actions.get_interaction_profile(0).get_binding_count() == 8, "Touch controller bindings exist")
+	var quality_button := false
+	for binding in actions.get_interaction_profile(0).bindings:
+		if binding.binding_path == "/user/hand/left/input/y/click" and binding.action.resource_name == "quality":
+			quality_button = true
+	check(quality_button, "Left Y button controls render clarity")
+	player.xr_render_scale = 1.15
+	player.cycle_render_quality()
+	check(is_equal_approx(player.xr_render_scale, 1.3), "Clarity can increase to 130 percent")
+	player.cycle_render_quality()
+	check(is_equal_approx(player.xr_render_scale, 1.0), "Clarity can return to baseline for performance")
 	world.queue_free()
 	await process_frame
 	if ResourceLoader.exists("res://assets/maps/test_fixture.glb"):

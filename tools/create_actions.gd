@@ -7,7 +7,7 @@ func _initialize() -> void:
 	action_set.localized_name = "Déplacements"
 	action_map.add_action_set(action_set)
 	var actions := {}
-	for entry in [["move", 2], ["jump", 0], ["reset", 0], ["sprint", 0], ["grip", 3]]:
+	for entry in [["move", 2], ["jump", 0], ["reset", 0], ["sprint", 0], ["grip", 3], ["quality", 0]]:
 		var action := OpenXRAction.new()
 		action.resource_name = entry[0]
 		action.localized_name = entry[0]
@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_bind(profile, actions.jump, "/user/hand/right/input/a/click")
 	_bind(profile, actions.reset, "/user/hand/right/input/b/click")
 	_bind(profile, actions.sprint, "/user/hand/left/input/thumbstick/click")
+	_bind(profile, actions.quality, "/user/hand/left/input/y/click")
 	action_map.add_interaction_profile(profile)
 	var result := ResourceSaver.save(action_map, "res://config/openxr_action_map.tres")
 	quit(result)

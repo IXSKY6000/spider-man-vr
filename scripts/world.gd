@@ -26,6 +26,8 @@ func _ready() -> void:
 			if config.get("stream_city", false):
 				city_stream = CityStream.new()
 				city_stream.visual_distance = float(config.get("city_view_distance", 900.0))
+				city_stream.lighting_exposure = float(config.get("lighting_exposure", 1.0))
+				city_stream.shadow_manifest_path = str(config.get("shadow_manifest", "res://assets/shadows/sun.json"))
 				add_child(city_stream)
 				city_stream.prepare(city)
 			else:
@@ -34,6 +36,8 @@ func _ready() -> void:
 	if not map_loaded:
 		_test_area()
 	player = Player.new()
+	player.xr_render_scale = float(config.get("xr_render_scale", 1.15))
+	get_viewport().mesh_lod_threshold = float(config.get("lod_pixel_error", 0.75))
 	player.spawn_point = _vec(config.get("spawn", [0, 2, 8])) if map_loaded else Vector3(0, 2, 8)
 	player.water_height = float(config.get("water_height", -2))
 	add_child(player)
@@ -53,11 +57,8 @@ func _lighting() -> void:
 	var world := WorldEnvironment.new()
 	var environment := Environment.new()
 	var sky := Sky.new()
-	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.sky_top_color = Color("397da3")
-	sky_material.sky_horizon_color = Color("c3d5da")
-	sky_material.ground_horizon_color = Color("b5c6cd")
-	sky_material.ground_bottom_color = Color("46575f")
+	var sky_material := ShaderMaterial.new()
+	sky_material.shader = preload("res://shaders/day_sky.gdshader")
 	sky.sky_material = sky_material
 	environment.background_mode = Environment.BG_SKY
 	environment.sky = sky
@@ -68,14 +69,18 @@ func _lighting() -> void:
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("b7cdd5")
 	environment.fog_density = float(config.get("fog_density", 0.00035))
+	# Keep distance haze on geometry without covering the sun and blue sky.
+	environment.fog_sky_affect = 0.05
 	world.environment = environment
 	add_child(world)
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
-	sun.rotation_degrees = Vector3(-38, -32, 0)
+	sun.rotation_degrees = Vector3(-float(config.get("sun_elevation_degrees", 68.0)), float(config.get("sun_azimuth_degrees", -35.0)), 0)
+	sky_material.set_shader_parameter("sun_direction", sun.transform.basis.z.normalized())
 	sun.light_color = Color("fff1d5")
 	sun.light_energy = 0.7
-	sun.shadow_enabled = true
+	# The city samples fixed solar depth textures; this light illuminates water.
+	sun.shadow_enabled = false
 	sun.directional_shadow_max_distance = 65
 	add_child(sun)
 

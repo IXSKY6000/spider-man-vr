@@ -21,6 +21,7 @@ PADDING = 8
 CELL_SIZE = 128.0
 # Visually inspected grass/soil textures, never facades, roofs or foliage cards.
 TERRAIN_MATERIALS = {138, 236, 226, 1559, 224}
+WATER_MATERIALS = {255, 1098, 1148, 1169}
 
 
 def run(source, output):
@@ -139,24 +140,41 @@ def run(source, output):
     bpy.data.objects.remove(terrain_obj, do_unlink=True)
     print("TERRAIN", len(terrain_faces), "faces", moved, "vertices relaxed", flush=True)
 
-    # Carry atlas origins in UV2, texture dimensions as quantization-safe log2 COLOR.
+    # Store atlas rectangle in RGB bytes (22 bits), independent of UV2.
     rects = np.array([packing[image_keys[m.name]] for m in materials], dtype=np.float32)
     rect_per_loop = rects[np.repeat(mat_ids, 3)]
-    atlas_uv = rect_per_loop[:, 1:3].copy() / ATLAS_SIZE
-    atlas_uv[:, 1] += rect_per_loop[:, 4] / ATLAS_SIZE  # glTF flips UV2 V on export
+    xs = np.rint(rect_per_loop[:, 1] / 8).astype(np.uint32)
+    ys = np.rint((ATLAS_SIZE - rect_per_loop[:, 2] - rect_per_loop[:, 4]) / 8).astype(np.uint32)
+    logs = np.rint(np.log2(rect_per_loop[:, 3:5])).astype(np.uint32) - 5
+    packed = xs | (ys << 9) | (logs[:, 0] << 18) | (logs[:, 1] << 20)
     color = np.ones((len(loops), 4), dtype=np.float32)
-    color[:, :2] = np.log2(rect_per_loop[:, 3:5]) / 8.0
+    for channel in range(3):
+        color[:, channel] = np.minimum(((packed >> (channel * 8)) & 255) + .25, 255) / 255
+    # Only horizontal water faces are replaced; retain basin walls.
+    water_keys = {image_keys[material.name] for material in materials
+                  if int(material.name.replace("Model001_Material", "").split(".")[0]) in WATER_MATERIALS}
+    water_ids = [i for i, material in enumerate(materials) if image_keys[material.name] in water_keys]
+    triangles = positions.reshape(-1, 3, 3)
+    face_normals = np.cross(triangles[:, 1] - triangles[:, 0], triangles[:, 2] - triangles[:, 0])
+    lengths = np.linalg.norm(face_normals, axis=1)
+    is_water = np.isin(mat_ids, water_ids) & (face_normals[:, 2] / np.maximum(lengths, 1e-9) > .85)
     pages = rects[mat_ids, 0].astype(np.int32)
     centroids = positions.reshape(-1, 3, 3).mean(axis=1)
     cells = np.floor(centroids[:, :2] / CELL_SIZE).astype(np.int32)
     unique_cells, assignments = np.unique(cells, axis=0, return_inverse=True)
     bpy.data.objects.remove(obj, do_unlink=True)
     chunk_stats = []
+    groups = []
     for chunk_id, cell in enumerate(unique_cells):
-        face_ids = np.flatnonzero(assignments == chunk_id)
+        for water in (False, True):
+            face_ids = np.flatnonzero((assignments == chunk_id) & (is_water == water))
+            if len(face_ids):
+                name = ("LegacyWater_" if water else "") + f"City_{cell[0]}_{cell[1]}"
+                groups.append((name, face_ids, water))
+    for name, face_ids, water in groups:
         corner_ids = (face_ids[:, None] * 3 + np.arange(3)).ravel()
         points, indices = np.unique(positions[corner_ids], axis=0, return_inverse=True)
-        chunk_mesh = bpy.data.meshes.new(f"City_{cell[0]}_{cell[1]}")
+        chunk_mesh = bpy.data.meshes.new(name)
         chunk_mesh.from_pydata(points.tolist(), [], indices.reshape(-1, 3).tolist())
         chunk = bpy.data.objects.new(chunk_mesh.name, chunk_mesh)
         bpy.context.collection.objects.link(chunk)
@@ -165,12 +183,13 @@ def run(source, output):
         chunk_mesh.polygons.foreach_set("material_index", pages[face_ids])
         chunk_mesh.polygons.foreach_set("use_smooth", np.ones(len(face_ids), dtype=bool))
         chunk_mesh.uv_layers.new(name="UVMap").data.foreach_set("uv", uv[corner_ids].ravel())
-        chunk_mesh.uv_layers.new(name="AtlasOrigin").data.foreach_set("uv", atlas_uv[corner_ids].ravel())
-        colors = chunk_mesh.color_attributes.new(name="AtlasDimensions", type="FLOAT_COLOR", domain="CORNER")
+        # FLOAT_COLOR avoids sRGB quantization of this data payload in Blender.
+        colors = chunk_mesh.color_attributes.new(name="AtlasPacked", type="FLOAT_COLOR", domain="CORNER")
         colors.data.foreach_set("color", color[corner_ids].ravel())
         chunk_mesh.color_attributes.active_color = colors
         chunk_mesh.normals_split_custom_set(normals[corner_ids].tolist())
-        chunk_stats.append({"name":chunk.name, "triangles":len(face_ids)})
+        if not water:
+            chunk_stats.append({"name":chunk.name, "triangles":len(face_ids)})
     print("CHUNKS", len(chunk_stats), flush=True)
     bpy.ops.export_scene.gltf(filepath=str(output / "liberty_city.glb"), export_format="GLB",
                               export_yup=True, export_cameras=False, export_lights=False,
@@ -178,7 +197,9 @@ def run(source, output):
     report = {"source": "LCG3.obj", "triangles": int(len(mat_ids)), "chunks": chunk_stats,
               "atlas_count": atlas_count, "unique_textures": len(unique),
               "terrain_materials": sorted(TERRAIN_MATERIALS), "terrain_faces": len(terrain_faces),
-              "terrain_vertices_relaxed": moved, "chunk_size_m": CELL_SIZE}
+              "terrain_vertices_relaxed": moved, "chunk_size_m": CELL_SIZE,
+              "atlas_metadata_version": 2, "legacy_water_triangles": int(is_water.sum()),
+              "legacy_water_materials": sorted(WATER_MATERIALS)}
     (output / "liberty_city.report.json").write_text(json.dumps(report, indent=2) + "\n")
     print("CITY_EXPORT_DONE", flush=True)
 
