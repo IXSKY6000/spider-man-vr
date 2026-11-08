@@ -1,0 +1,15 @@
+{
+  "scene": "res://assets/maps/liberty_city.glb",
+  "scale": 1.0,
+  "position": [0.0, 0.0, 0.0],
+  "rotation_degrees": [0.0, 0.0, 0.0],
+  "spawn": [-105.0, 1.0, -465.0],
+  "water_height": -15.0,
+  "water_size": 6000.0,
+  "water_wind": 0.75,
+  "water_roughness": 0.13,
+  "far_clip": 1400.0,
+  "stream_city": true,
+  "city_view_distance": 900.0,
+  "fog_density": 0.00055
+}

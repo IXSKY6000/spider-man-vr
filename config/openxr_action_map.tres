@@ -1,0 +1,72 @@
+[gd_resource type="OpenXRActionMap" format=3]
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_kb6nv"]
+resource_name = "move"
+localized_name = "move"
+action_type = 2
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_0fp7n"]
+resource_name = "jump"
+localized_name = "jump"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_i720m"]
+resource_name = "reset"
+localized_name = "reset"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_jweb5"]
+resource_name = "sprint"
+localized_name = "sprint"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_78aeb"]
+resource_name = "grip"
+localized_name = "grip"
+action_type = 3
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRActionSet" id="OpenXRActionSet_ndmnt"]
+resource_name = "gameplay"
+localized_name = "Déplacements"
+actions = [SubResource("OpenXRAction_kb6nv"), SubResource("OpenXRAction_0fp7n"), SubResource("OpenXRAction_i720m"), SubResource("OpenXRAction_jweb5"), SubResource("OpenXRAction_78aeb")]
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_xttlq"]
+action = SubResource("OpenXRAction_kb6nv")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_em0mv"]
+action = SubResource("OpenXRAction_78aeb")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_ng4bb"]
+action = SubResource("OpenXRAction_kb6nv")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_s2fn3"]
+action = SubResource("OpenXRAction_78aeb")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_nanni"]
+action = SubResource("OpenXRAction_0fp7n")
+binding_path = "/user/hand/right/input/a/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_fyugy"]
+action = SubResource("OpenXRAction_i720m")
+binding_path = "/user/hand/right/input/b/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_mye2u"]
+action = SubResource("OpenXRAction_jweb5")
+binding_path = "/user/hand/left/input/thumbstick/click"
+
+[sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_yum7f"]
+interaction_profile_path = "/interaction_profiles/oculus/touch_controller"
+bindings = [SubResource("OpenXRIPBinding_xttlq"), SubResource("OpenXRIPBinding_em0mv"), SubResource("OpenXRIPBinding_ng4bb"), SubResource("OpenXRIPBinding_s2fn3"), SubResource("OpenXRIPBinding_nanni"), SubResource("OpenXRIPBinding_fyugy"), SubResource("OpenXRIPBinding_mye2u")]
+
+[resource]
+action_sets = [SubResource("OpenXRActionSet_ndmnt")]
+interaction_profiles = [SubResource("OpenXRInteractionProfile_yum7f")]

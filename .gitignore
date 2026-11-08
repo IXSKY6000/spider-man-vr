@@ -1,0 +1,13 @@
+.godot/
+build/
+*.blend1
+*.tmp
+__pycache__/
+assets/maps/*.glb
+assets/maps/*.gltf
+assets/maps/*.bin
+assets/maps/liberty_atlas_*.png
+assets/maps/test_fixture.*
+/android/
+assets/maps/source/
+!assets/maps/.gitkeep
